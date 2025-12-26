@@ -9,7 +9,7 @@ import {
   updateUserStart,
   updateUserSuccess,
 } from "../redux/user/userSlice";
-
+import { Link } from 'react-router-dom';
 export default function Profile() {
   const fileRef = useRef(null);
   const dispatch = useDispatch();
@@ -148,6 +148,9 @@ export default function Profile() {
          <input value={formData.email} onChange={handleChange} type="email" placeholder='Email' id="email" className="border p-3 rounded-lg"/>
           <input value={formData.password} onChange={handleChange} type="password" placeholder='Password' id="password" className="border p-3 rounded-lg"/>
           <button disabled={loading || fileUploading} className="bg-slate-700 text-white  rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80">{fileUploading ? 'Uploading...' : loading ? 'Updating...' : 'Update'}</button>
+          <Link className='bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95' to={"/create-listing"}>
+          Create Listing
+          </Link>
       </form>
       {fileUploadError && <p className="text-red-700 mt-2">{fileUploadError}</p>}
       {error && <p className="text-red-700 mt-2">{error}</p>}
