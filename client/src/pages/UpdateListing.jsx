@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 
-export default function CreateListing() {
+export default function UpdateListing() {
   const [files, setFiles] = useState([]);
   const [imageUrls, setImageUrls] = useState([]);
   const [error, setError] = useState("");
@@ -129,23 +129,54 @@ export default function CreateListing() {
   };
 
   /* ------------------ Form Change ------------------ */
+  // const handleChange = (e) => {
+  //   if (e.target.id === "sale" || e.target.id === "rent") {
+  //     setFormData({ ...formData, type: e.target.id });
+  //   } else if (
+  //     e.target.id === "parking" ||
+  //     e.target.id === "offer" ||
+  //     e.target.id === "furnished"
+  //   ) {
+  //     setFormData({ ...formData, [e.target.id]: e.target.checked });
+  //   } else if (
+  //     e.target.type === "text" ||
+  //     e.target.type === "textarea" ||
+  //     e.target.type === "number"
+  //   ) {
+  //     setFormData({ ...formData, [e.target.id]: e.target.value });
+  //   }
+  // };
+
   const handleChange = (e) => {
-    if (e.target.id === "sale" || e.target.id === "rent") {
-      setFormData({ ...formData, type: e.target.id });
-    } else if (
-      e.target.id === "parking" ||
-      e.target.id === "offer" ||
-      e.target.id === "furnished"
-    ) {
-      setFormData({ ...formData, [e.target.id]: e.target.checked });
-    } else if (
-      e.target.type === "text" ||
-      e.target.type === "textarea" ||
-      e.target.type === "number"
-    ) {
-      setFormData({ ...formData, [e.target.id]: e.target.value });
-    }
-  };
+  // SALE / RENT
+  if (e.target.id === "sale" || e.target.id === "rent") {
+    setFormData({ ...formData, type: e.target.id });
+
+  // CHECKBOXES
+  } else if (
+    e.target.id === "parking" ||
+    e.target.id === "offer" ||
+    e.target.id === "furnished"
+  ) {
+    setFormData({ ...formData, [e.target.id]: e.target.checked });
+
+  // TEXT / NUMBER
+  } else if (
+    e.target.type === "text" ||
+    e.target.type === "textarea" ||
+    e.target.type === "number"
+  ) {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+
+  // ✅ IMAGES (IMPORTANT PART)
+  } else if (e.target.type === "file") {
+    setFormData({ 
+      ...formData, 
+      images: [...e.target.files]   // FILES STORE HERE
+    });
+  }
+};
+
 
   /* ------------------ Submit Listing ------------------ */
   const handleSubmit = async (e) => {
@@ -183,6 +214,7 @@ export default function CreateListing() {
       setError(err.message);
     }
   };
+
   return (
     <main className="p-3  max-w-4xl mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">

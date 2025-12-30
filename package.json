@@ -5,10 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-  "dev": "nodemon -r dotenv/config api/index.js",
-  "start": "node -r dotenv/config api/index.js"
-},
-
+    "dev": "nodemon -r dotenv/config api/index.js",
+    "start": "node -r dotenv/config api/index.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

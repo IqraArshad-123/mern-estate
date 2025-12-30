@@ -53,25 +53,59 @@ export const deleteListing = async (req, res, next)=>{
     next(error);
   }
 }
-export const updateListing = async (req, res, next)=>{
-  const listing = await Listing.findById(req.params.id);
-  if(!listing){
-    return next(errorHandler(404, 'Listing not found!'));
-  }
-  if (req.user.id !== listing.userRef) {
-    return next(errorHandler(401, 'You can only update your own listing!'))
-  }
+// export const updateListing = async (req, res, next)=>{
+//   const listing = await Listing.findById(req.params.id);
+//   if(!listing){
+//     return next(errorHandler(404, 'Listing not found!'));
+//   }
+//   if (req.user.id !== listing.userRef) {
+//     return next(errorHandler(401, 'You can only update your own listing!'))
+//   }
+//   try {
+//     const updateListing = await Listing.findByIdAndUpdate(
+//       req.params.id,
+//       req.body,
+//       {new: true}
+//     );
+//     res.status(200).json(updateListing);
+//   } catch (error) {
+//     next(error);
+//   }
+// }
+
+export const updateListing = async (req, res, next) => {
   try {
-    const updateListing = await Listing.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {new: true}
-    );
-    res.status(200).json(updateListing);
+    const listing = await Listing.findById(req.params.id);
+    if (!listing) {
+      return next(errorHandler(404, "Listing not found!"));
+    }
+
+    if (req.user.id !== listing.userRef.toString()) {
+      return next(errorHandler(401, "You can only update your own listing!"));
+    }
+
+    // ✅ Text fields update
+    listing.title = req.body.title || listing.title;
+    listing.description = req.body.description || listing.description;
+    listing.price = req.body.price || listing.price;
+
+    // ✅ Single image update
+    if (req.file) {
+      listing.image = req.file.path; // agar single file
+    }
+
+    // ✅ Multiple images update
+    if (req.files && req.files.length > 0) {
+      listing.images = req.files.map((file) => file.path);
+    }
+
+    const updatedListing = await listing.save();
+    res.status(200).json(updatedListing);
   } catch (error) {
     next(error);
   }
-}
+};
+
 export const getListing = async (req, res , next)=>{
   try {
     const listing = await Listing.findById(req.params.id);
