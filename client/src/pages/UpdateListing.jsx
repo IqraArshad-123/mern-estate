@@ -129,91 +129,118 @@ export default function UpdateListing() {
   };
 
   /* ------------------ Form Change ------------------ */
-  // const handleChange = (e) => {
-  //   if (e.target.id === "sale" || e.target.id === "rent") {
-  //     setFormData({ ...formData, type: e.target.id });
-  //   } else if (
-  //     e.target.id === "parking" ||
-  //     e.target.id === "offer" ||
-  //     e.target.id === "furnished"
-  //   ) {
-  //     setFormData({ ...formData, [e.target.id]: e.target.checked });
-  //   } else if (
-  //     e.target.type === "text" ||
-  //     e.target.type === "textarea" ||
-  //     e.target.type === "number"
-  //   ) {
-  //     setFormData({ ...formData, [e.target.id]: e.target.value });
-  //   }
-  // };
-
   const handleChange = (e) => {
-  // SALE / RENT
-  if (e.target.id === "sale" || e.target.id === "rent") {
-    setFormData({ ...formData, type: e.target.id });
+    if (e.target.id === "sale" || e.target.id === "rent") {
+      setFormData({ ...formData, type: e.target.id });
+    } else if (
+      e.target.id === "parking" ||
+      e.target.id === "offer" ||
+      e.target.id === "furnished"
+    ) {
+      setFormData({ ...formData, [e.target.id]: e.target.checked });
+    } else if (
+      e.target.type === "text" ||
+      e.target.type === "textarea" ||
+      e.target.type === "number"
+    ) {
+      setFormData({ ...formData, [e.target.id]: e.target.value });
+    }
+  };
 
-  // CHECKBOXES
-  } else if (
-    e.target.id === "parking" ||
-    e.target.id === "offer" ||
-    e.target.id === "furnished"
-  ) {
-    setFormData({ ...formData, [e.target.id]: e.target.checked });
-
-  // TEXT / NUMBER
-  } else if (
-    e.target.type === "text" ||
-    e.target.type === "textarea" ||
-    e.target.type === "number"
-  ) {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
-
-  // ✅ IMAGES (IMPORTANT PART)
-  } else if (e.target.type === "file") {
-    setFormData({ 
-      ...formData, 
-      images: [...e.target.files]   // FILES STORE HERE
-    });
-  }
-};
 
 
   /* ------------------ Submit Listing ------------------ */
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   console.log("📦 FORMDATA:", [...formData.entries()]);
+
+  //   if (formData.imageUrls.length < 1)
+  //     return setError("You have to upload at least 1 image");
+  //   if (formData.regularPrice < formData.discountPrice)
+  //     return setError("Discount price must be less than regular price");
+
+  //   try {
+  //     setLoadingForServer(true);
+
+  //     const response = await fetch(
+  //      `/api/listing/update/${params.listingId}`,
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         credentials: "include",
+  //         body: JSON.stringify({
+  //           ...formData,
+  //           userRef: currentUser._id,
+  //         }),
+  //       }
+  //     );
+
+  //     const jsonData = await response.json();
+  //       setLoadingForServer(false);
+  //       if(jsonData.success === false) {
+  //       setError(jsonData.message);
+  //       }
+  //     navigate(`/listing/${jsonData._id}`);
+  //   } catch (err) {
+  //     setLoadingForServer(false);
+  //     setError(err.message);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (formData.imageUrls.length < 1)
-      return setError("You have to upload at least 1 image");
-    if (formData.regularPrice < formData.discountPrice)
-      return setError("Discount price must be less than regular price");
+  if (files.length < 1 && formData.imageUrls.length < 1) {
+  return setError("You must have at least 1 image");
+}
 
-    try {
-      setLoadingForServer(true);
 
-      const response = await fetch(
-       `/api/listing/update/${params.listingId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            ...formData,
-            userRef: currentUser._id,
-          }),
-        }
-      );
+  if (formData.regularPrice < formData.discountPrice) {
+    return setError("Discount price must be less than regular price");
+  }
 
-      const jsonData = await response.json();
-        setLoadingForServer(false);
-        if(jsonData.success === false) {
-        setError(jsonData.message);
-        }
-      navigate(`/listing/${jsonData._id}`);
-    } catch (err) {
-      setLoadingForServer(false);
-      setError(err.message);
+  try {
+    setLoadingForServer(true);
+
+    // ✅ REAL FormData object
+    const data = new FormData();
+
+    // ✅ text fields
+    Object.keys(formData).forEach((key) => {
+      data.append(key, formData[key]);
+    });
+
+    // ✅ images
+    files.forEach((file) => {
+      data.append("images", file);
+    });
+
+    // 🔍 debug (ab error nahi aayega)
+    console.log("📦 FORMDATA:", [...data.entries()]);
+
+    const response = await fetch(
+      `/api/listing/update/${params.listingId}`,
+      {
+        method: "PUT", // ✅ UPDATE
+        credentials: "include",
+        body: data, // ✅ FormData
+      }
+    );
+
+    const jsonData = await response.json();
+    setLoadingForServer(false);
+
+    if (jsonData.success === false) {
+      setError(jsonData.message);
+      return;
     }
-  };
+
+    navigate(`/listing/${jsonData._id}`);
+  } catch (err) {
+    setLoadingForServer(false);
+    setError(err.message);
+  }
+};
 
   return (
     <main className="p-3  max-w-4xl mx-auto">
@@ -420,7 +447,7 @@ export default function UpdateListing() {
             ))}
           </div>
 
-          <button className="p-3 bg-slate-700 text-white rounded-lg disabled:opacity-80 uppercase hover:opacity-95">
+          <button type="submit" className="p-3 bg-slate-700 text-white rounded-lg disabled:opacity-80 uppercase hover:opacity-95">
           {loadingForServer ? 'Editing...' : 'Edit Listing'}
           </button>
           {error && <p className="text-red-700 text-sm">{error}</p>}
