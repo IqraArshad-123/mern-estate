@@ -1,0 +1,1 @@
+{"rewrites":[{"source":"/api/:path*","destination":"https://mern-estate-backend-nu.vercel.app/api/:path*"},{"source":"/((?!api/).*)","destination":"/index.html"}]}
