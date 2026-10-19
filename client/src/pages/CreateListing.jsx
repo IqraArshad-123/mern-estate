@@ -76,7 +76,8 @@
 //           </p>
 //           <div className="flex gap-4">
 //             <input onChange={(e)=>setFiles(e.target.files)} className='p-3 border border-gray-300 rounded w-full' type='file' id='images' accept='image/*' multiple/>
-//             <button type='button' onClick={handleImageSubmit} className='p-3 text-green-700 border border-green-700 rounded uppercase hover:shadow-lg disabled:opacity-80'>Upload</button>
+//             <button type='button' disabled={uploading}
+//              onClick={handleImageSubmit} className='p-3 text-green-700 border border-green-700 rounded uppercase hover:shadow-lg disabled:opacity-80'>Upload</button>
 //           </div>
 //           <button className='p-3 bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80'>Create Listing</button>
 //         </div>        
@@ -91,6 +92,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function CreateListing() {
   const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [imageUrls, setImageUrls] = useState([]);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -112,7 +114,7 @@ export default function CreateListing() {
     offer: false,
     imageUrls: [],
   });
-  console.log(formData)
+
 
   /* ------------------ File Change ------------------ */
   const handleFileChange = (e) => {
@@ -137,60 +139,25 @@ export default function CreateListing() {
 
   /* ------------------ Upload Images to Backend ------------------ */
   const handleImageSubmit = async () => {
-    if (files.length < 1 || files.length > 6) {
-      setError("Please upload between 1 to 6 images.");
-      return;
-    }
+    if (uploading) return;
+    if (!files.length || formData.imageUrls.length + files.length > 6) return setError('Upload between 1 and 6 photos in total.');
+    if (files.some(file => file.size > 3 * 1024 * 1024)) return setError('Each photo must be smaller than 3 MB.');
+    setUploading(true); setError('');
+    try {
+      for (const file of files) {
+        const body = new FormData(); body.append('images', file);
+        const response = await fetch('/api/upload/listing-images', {method:'POST',credentials:'include',body});
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Photo upload failed');
+        setImageUrls(prev => [...prev, ...data.urls]);
+        setFormData(prev => ({...prev,imageUrls:[...prev.imageUrls,...data.urls]}));
+        setFiles(prev => prev.filter(candidate => candidate !== file));
+      }
+      setSuccessMessage('Images uploaded successfully!');
+    } catch(error) { setError(error.message); }
+    finally { setUploading(false); }
+  };
 
-
-  try {
-  const formDataToSend = new FormData();
-  files.forEach((file) => formDataToSend.append("images", file));
-
-  const res = await fetch(
-    "http://localhost:3000/api/upload/listing-images",
-    {
-      method: "POST",
-      credentials: "include", // if backend uses cookies/auth
-      body: formDataToSend,
-    }
-  );
-
-  // Read response as text first
-  const resText = await res.text();
-  let data;
-
-  try {
-    data = JSON.parse(resText); // Try parsing JSON
-  } catch (err) {
-    console.error("Backend returned non-JSON response:", resText);
-    setError("Upload failed: Backend returned invalid response.");
-    return;
-  }
-
-  if (!data.success) {
-    setError(data.message || "Upload failed.");
-    return;
-  }
-
-  // Update frontend state
-  setImageUrls((prev) => [...prev, ...data.urls]);
-  setFormData((prev) => ({
-    ...prev,
-    imageUrls: [...prev.imageUrls, ...data.urls],
-  }));
-  setSuccessMessage("Images uploaded successfully!");
-  setTimeout(() => setSuccessMessage(""), 3000);
-
-  setFiles([]);
-  setError("");
-} catch (err) {
-  console.error("Backend upload error:", err);
-  setError("Something went wrong during upload.");
-}
-  }
-
-  /* ------------------ Delete Image ------------------ */
   const handleDelete = (url) => {
     setImageUrls((prev) => prev.filter((img) => img !== url));
     setFormData((prev) => ({
@@ -224,14 +191,14 @@ export default function CreateListing() {
 
     if (formData.imageUrls.length < 1)
       return setError("You have to upload at least 1 image");
-    if (formData.regularPrice < formData.discountPrice)
+    if (formData.offer && Number(formData.regularPrice) < Number(formData.discountPrice))
       return setError("Discount price must be less than regular price");
 
     try {
       setLoadingForServer(true);
 
       const response = await fetch(
-       'http://localhost:3000/api/listing/create',
+       '/api/listing/create',
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -247,6 +214,7 @@ export default function CreateListing() {
         setLoadingForServer(false);
         if(jsonData.success === false) {
         setError(jsonData.message);
+        return;
         }
       navigate(`/listing/${jsonData._id}`);
     } catch (err) {
@@ -428,6 +396,7 @@ export default function CreateListing() {
             />
             <button
               type="button"
+              disabled={uploading}
               onClick={handleImageSubmit}
               className="p-3 text-green-700 border border-green-700 rounded uppercase hover:shadow-lg disabled:opacity-80"
             >
@@ -946,7 +915,7 @@ export default function CreateListing() {
 //         {successMessage && <p className="text-green-600">{successMessage}</p>}
 //         {error && <p className="text-red-600">{error}</p>}
 
-//         <button disabled={loadingForServer}>
+//         <button disabled={loadingForServer || uploading}>
 //           {loadingForServer ? "Creating..." : "Create Listing"}
 //         </button>
 //       </form>
