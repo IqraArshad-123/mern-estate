@@ -64,8 +64,8 @@ export const updateListing = async (req, res, next)=>{
   try {
     const updateListing = await Listing.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      {new: true}
+      { ...req.body, userRef: req.user.id },
+      {new: true, runValidators:true}
     );
     res.status(200).json(updateListing);
   } catch (error) {
